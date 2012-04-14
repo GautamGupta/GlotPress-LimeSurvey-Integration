@@ -51,13 +51,8 @@ define('GP_LANG', '');
  *
  * If you start with fresh permissions, you can add admins via `php scripts/add-admin.php`
  */
-define('CUSTOM_USER_TABLE', 'lime_users');
+// define('CUSTOM_USER_TABLE', 'wp_users');
 // define('CUSTOM_USER_META_TABLE', 'wp_usermeta');
-
-require_once( 'class.ls-users.php' );
-$wp_users_object = new WP_Users( $gpdb );
-
-require_once( 'class.ls-pass.php' );
 
 /**
  * GlotPress Database Table prefix.
