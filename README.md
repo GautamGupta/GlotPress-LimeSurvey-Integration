@@ -19,7 +19,7 @@ Hacking
 The modifications to the original classes were done on GlotPress r683.
 
  1. Refer to this [commit](https://github.com/GautamGupta/GlotPress-LimeSurvey-Integration/commit/6021e34fa494a44933e684d4a95552d6683998b3) to see how the core files were modified to suit the needs.
- 2. Refer to this [blog post](http://gaut.am/integrating-glotpress-limesurvey-user-tables/) to know more.
+ 2. Refer to this [blog post](http://gaut.am/integrating-glotpress-user-tables-with-another-software/) to know more.
 
 Contributing
 ------------
