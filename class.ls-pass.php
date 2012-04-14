@@ -16,7 +16,7 @@ class WP_Pass {
 	 * @return string The hash string of the password
 	 */
 	function hash_password($password) {
-		global $wp_hasher;
+		/* global $wp_hasher;
 
 		if ( empty($wp_hasher) ) {
 			require_once( BACKPRESS_PATH . 'class.passwordhash.php');
@@ -24,7 +24,9 @@ class WP_Pass {
 			$wp_hasher = new PasswordHash(8, TRUE);
 		}
 
-		return $wp_hasher->HashPassword($password);
+		return $wp_hasher->HashPassword($password); */
+
+		return hash('sha256', $password);
 	}
 
 	/**
@@ -48,6 +50,7 @@ class WP_Pass {
 	 * @return bool False, if the $password does not match the hashed password
 	 */
 	function check_password($password, $hash, $user_id = '') {
+/*
 		global $wp_hasher, $wp_users_object;
 
 		list($hash, $broken) = array_pad( explode( '---', $hash ), 2, '' );
@@ -73,6 +76,9 @@ class WP_Pass {
 		}
 
 		$check = $wp_hasher->CheckPassword($password, $hash);
+*/
+
+		$check = $hash == WP_Pass::hash_password($password);
 
 		return apply_filters('check_password', $check, $password, $hash, $user_id);
 	}

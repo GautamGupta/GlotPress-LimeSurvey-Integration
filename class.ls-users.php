@@ -16,16 +16,25 @@ class WP_Users {
 //	}
 
 	function _put_user( $args = null ) {
+		/* $defaults = array(
+			'uid' => false,
+			'users_name' => '',
+			'user_nicename' => '',        // users_name
+			'email' => '',
+			'user_url' => '',             // missing
+			'password' => false,
+			'user_registered' => time(),  // missing
+			'full_name' => '',
+			'user_status' => 0,           // missing
+			'strict_user_login' => true   // missing
+		); */
+
 		$defaults = array(
-			'ID' => false,
-			'user_login' => '',
-			'user_nicename' => '',
-			'user_email' => '',
-			'user_url' => '',
-			'user_pass' => false,
-			'user_registered' => time(),
-			'display_name' => '',
-			'user_status' => 0,
+			'uid' => false,
+			'users_name' => '',
+			'email' => '',
+			'password' => false,
+			'full_name' => '',
 			'strict_user_login' => true
 		);
 
@@ -33,8 +42,8 @@ class WP_Users {
 		$args = wp_parse_args( $args, $defaults );
 		unset($defaults['strict_user_login']);
 
-		if ( isset($args['ID']) && $args['ID'] ) {
-			unset($defaults['ID']);
+		if ( isset($args['uid']) && $args['uid'] ) {
+			unset($defaults['uid']);
 			$fields = array_intersect( $fields, array_keys( $defaults ) );
 		} else {
 			$fields = array_keys( $defaults );
@@ -42,47 +51,47 @@ class WP_Users {
 
 		extract( $args, EXTR_SKIP );
 
-		$ID = (int) $ID;
+		$uid = (int) $uid;
 
-		if ( !$ID || in_array( 'user_login', $fields ) ) {
-			$user_login = $this->sanitize_user( $user_login, $strict_user_login );
+		if ( !$uid || in_array( 'users_name', $fields ) ) {
+			$users_name = $this->sanitize_user( $users_name, $strict_user_login );
 
-			if ( !$user_login )
-				return new WP_Error( 'user_login', __('Invalid login name') );
-			if ( !$ID && $this->get_user( $user_login, array( 'by' => 'login' ) ) )
-				return new WP_Error( 'user_login', __('Name already exists') );
+			if ( !$users_name )
+				return new WP_Error( 'users_name', __('Invalid login name') );
+			if ( !$uid && $this->get_user( $users_name, array( 'by' => 'login' ) ) )
+				return new WP_Error( 'users_name', __('Name already exists') );
 		}
-
-		if ( !$ID || in_array( 'user_nicename', $fields ) ) {
-			if ( !$user_nicename = $this->sanitize_nicename( $user_nicename ? $user_nicename : $user_login ) )
+/*
+		if ( !$uid || in_array( 'user_nicename', $fields ) ) {
+			if ( !$user_nicename = $this->sanitize_nicename( $user_nicename ? $user_nicename : $users_name ) )
 				return new WP_Error( 'user_nicename', __('Invalid nicename') );
-			if ( !$ID && $this->get_user( $user_nicename, array( 'by' => 'nicename' ) ) )
+			if ( !$uid && $this->get_user( $user_nicename, array( 'by' => 'nicename' ) ) )
 				return new WP_Error( 'user_nicename', __('Nicename already exists') );
 		}
+*/
+		if ( !$uid || in_array( 'email', $fields ) ) {
+			if ( !$this->is_email( $email ) )
+				return new WP_Error( 'email', __('Invalid email address') );
 
-		if ( !$ID || in_array( 'user_email', $fields ) ) {
-			if ( !$this->is_email( $user_email ) )
-				return new WP_Error( 'user_email', __('Invalid email address') );
-
-			if ( $already_email = $this->get_user( $user_email, array( 'by' => 'email' ) ) ) {
+			if ( $already_email = $this->get_user( $email, array( 'by' => 'email' ) ) ) {
 				// if new user, or if multiple users with that email, or if only one user with that email, but it's not the user being updated
-				if ( !$ID || is_wp_error( $already_email ) || $already_email->ID != $ID )
-					return new WP_Error( 'user_email', __('Email already exists') );
+				if ( !$uid || is_wp_error( $already_email ) || $already_email->uid != $uid )
+					return new WP_Error( 'email', __('Email already exists') );
 			}
 		}
-
-		if ( !$ID || in_array( 'user_url', $fields ) ) {
+/*
+		if ( !$uid || in_array( 'user_url', $fields ) ) {
 			$user_url = esc_url( $user_url );
 		}
-
-		if ( !$ID || in_array( 'user_pass', $fields ) ) {
-			if ( !$user_pass )
-				$user_pass = WP_Pass::generate_password();
-			$plain_pass = $user_pass;
-			$user_pass  = WP_Pass::hash_password( $user_pass );
+*/
+		if ( !$uid || in_array( 'password', $fields ) ) {
+			if ( !$password )
+				$password = WP_Pass::generate_password();
+			$plain_pass = $password;
+			$password  = WP_Pass::hash_password( $password );
 		}
 
-		if ( !$ID || in_array( 'user_registered', $fields ) ) {
+		if ( !$uid || in_array( 'user_registered', $fields ) ) {
 			if ( !is_numeric($user_registered) )
 				$user_registered = backpress_gmt_strtotime( $user_registered );
 
@@ -93,26 +102,26 @@ class WP_Users {
 				return new WP_Error( 'user_registered', __('Invalid registration timestamp') );
 		}
 
-		if ( !$ID || in_array( 'user_display', $fields ) ) {
-			if ( !$display_name )
-				$display_name = $user_login;
+		if ( !$uid || in_array( 'full_name', $fields ) ) {
+			if ( !$full_name )
+				$full_name = $users_name;
 		}
 
 		$db_return = NULL;
-		if ( $ID ) {
-			$db_return = $this->db->update( $this->db->users, compact( $fields ), compact('ID') );
+		if ( $uid ) {
+			$db_return = $this->db->update( $this->db->users, compact( $fields ), compact('uid') );
 		} else {
 			$db_return = $this->db->insert( $this->db->users, compact( $fields ) );
-			$ID = $this->db->insert_id;
+			$uid = $this->db->insert_id;
 		}
 
 		if ( !$db_return )
 			return new WP_Error( 'WP_Users::_put_user', __('Query failed') );
 
 		// Cache the result
-		if ( $ID ) {
-			wp_cache_delete( $ID, 'users' );
-			$this->get_user( $ID, array( 'from_cache' => false ) );
+		if ( $uid ) {
+			wp_cache_delete( $uid, 'users' );
+			$this->get_user( $uid, array( 'from_cache' => false ) );
 		}
 
 		$args = compact( array_keys($args) );
@@ -125,7 +134,7 @@ class WP_Users {
 
 	function new_user( $args = null ) {
 		$args = wp_parse_args( $args );
-		$args['ID'] = false;
+		$args['uid'] = false;
 
 		$r = $this->_put_user( $args );
 
@@ -137,15 +146,15 @@ class WP_Users {
 		return $r;
 	}
 
-	function update_user( $ID, $args = null ) {
+	function update_user( $uid, $args = null ) {
 		$args = wp_parse_args( $args );
 
 		$args['output'] = OBJECT;
-		$user = $this->get_user( $ID, $args );
+		$user = $this->get_user( $uid, $args );
 		if ( !$user || is_wp_error( $user ) )
 			return $user;
 
-		$args['ID'] = $user->ID;
+		$args['uid'] = $user->uid;
 
 		$r = $this->_put_user( $args );
 
@@ -168,19 +177,19 @@ class WP_Users {
 	 * @uses WP_Pass::hash_password() Used to encrypt the user's password before passing to the database
 	 *
 	 * @param string $password The plaintext new user password
-	 * @param int $user_id User ID
+	 * @param int $user_id User uid
 	 */
 	function set_password( $password, $user_id ) {
 		$user = $this->get_user( $user_id );
 		if ( !$user || is_wp_error( $user ) )
 			return $user;
 
-		$user_id = $user->ID;
+		$user_id = $user->uid;
 		$hash = WP_Pass::hash_password($password);
-		$this->update_user( $user->ID, array( 'user_pass' => $password ) );
+		$this->update_user( $user->uid, array( 'password' => $hash ) );
 	}
 
-	// $user_id can be user ID#, user_login, user_email (by specifying by = email)
+	// $user_id can be user uid#, users_name, email (by specifying by = email)
 	function get_user( $user_id = 0, $args = null ) {
 		$defaults = array( 'output' => OBJECT, 'by' => false, 'from_cache' => true, 'append_meta' => true );
 		$args = wp_parse_args( $args, $defaults );
@@ -197,12 +206,16 @@ class WP_Users {
 			return false;
 		}
 
+		if ( 'nicename' == $by )
+			$by = 'login';
+
 		// Validate passed ids
 		$safe_user_ids = array();
 		foreach ( $user_ids as $_user_id ) {
 			switch ( $by ) {
 				case 'login':
 					$safe_user_ids[] = $this->sanitize_user( $_user_id, true );
+					$by = 'login';
 					break;
 				case 'email':
 					if ( $this->is_email( $_user_id ) ) {
@@ -215,7 +228,7 @@ class WP_Users {
 				default:
 					if ( is_numeric( $_user_id ) ) {
 						$safe_user_ids[] = (int) $_user_id;
-					} else { // If one $_user_id is non-numerical, treat all $user_ids as user_logins
+					} else { // If one $_user_id is non-numerical, treat all $user_ids as users_names
 						$safe_user_ids[] = $this->sanitize_user( $_user_id, true );
 						$by = 'login';
 					}
@@ -232,11 +245,11 @@ class WP_Users {
 		switch ( $by ) {
 			case 'login':
 				$non_existant_cache = 'userlogins';
-				$sql_field = 'user_login';
+				$sql_field = 'users_name';
 				break;
 			case 'email':
 				$non_existant_cache = 'useremail';
-				$sql_field = 'user_email';
+				$sql_field = 'email';
 				break;
 			case 'nicename':
 				$non_existant_cache = 'usernicename';
@@ -244,11 +257,11 @@ class WP_Users {
 				break;
 			default:
 				$non_existant_cache = 'users';
-				$sql_field = 'ID';
+				$sql_field = 'uid';
 				break;
 		}
 
-		// Check if the numeric user IDs exist from caches
+		// Check if the numeric user uids exist from caches
 		$cached_users = array();
 		if ( $from_cache ) {
 			$existant_user_ids = array();
@@ -259,11 +272,11 @@ class WP_Users {
 				case 'email':
 				case 'nicename':
 					foreach ( $safe_user_ids as $_safe_user_id ) {
-						$ID = wp_cache_get( $_safe_user_id, $non_existant_cache );
-						if ( false === $ID ) {
+						$uid = wp_cache_get( $_safe_user_id, $non_existant_cache );
+						if ( false === $uid ) {
 							$maybe_existant_user_ids[] = $_safe_user_id;
-						} elseif ( 0 !== $ID ) {
-							$existant_user_ids[] = $ID;
+						} elseif ( 0 !== $uid ) {
+							$existant_user_ids[] = $uid;
 						}
 					}
 					if ( count( $existant_user_ids ) ) {
@@ -294,7 +307,7 @@ class WP_Users {
 				// Deal with the case where one record was requested but multiple records are returned
 				if ( !is_array( $user_id ) && $user_id ) {
 					if ( 1 < count( $cached_users ) ) {
-						if ( 'user_email' == $sql_field ) {
+						if ( 'email' == $sql_field ) {
 							$err = __( 'Multiple email matches.  Log in with your username.' );
 						} else {
 							$err = sprintf( __( 'Multiple %s matches' ), $sql_field );
@@ -330,7 +343,7 @@ class WP_Users {
 			// Create a convenient array of database fetched user ids
 			$db_user_ids = array();
 			foreach ( $db_users as $_db_user ) {
-				$db_user_ids[] = $_db_user->ID;
+				$db_user_ids[] = $_db_user->uid;
 			}
 			$users = array_merge( $cached_users, $db_users );
 		} else {
@@ -340,7 +353,7 @@ class WP_Users {
 		// Deal with the case where one record was requested but multiple records are returned
 		if ( !is_array( $user_id ) && $user_id ) {
 			if ( 1 < count( $users ) ) {
-				if ( 'user_email' == $sql_field ) {
+				if ( 'email' == $sql_field ) {
 					$err = __( 'Multiple email matches.  Log in with your username.' );
 				} else {
 					$err = sprintf( __( 'Multiple %s matches' ), $sql_field );
@@ -365,12 +378,31 @@ class WP_Users {
 			return false;
 		}
 
+		$additions = array(
+			'ID' => 'uid',
+			'user_login' => 'users_name',
+			'user_nicename' => 'users_name',
+			'user_email' => 'email',
+			'user_url' => '',
+			'user_pass' => 'password',
+			'user_registered' => time(),
+			'display_name' => 'full_name',
+			'user_status' => 0,
+			'strict_user_login' => true
+		);
+
 		// Add display names
 		$final_users = array();
 		foreach ( $users as $_user ) {
-			// Make sure there is a display_name set
-			if ( !$_user->display_name ) {
-				$_user->display_name = $_user->user_login;
+			// Make sure there is a full_name set
+			if ( !$_user->full_name ) {
+				$_user->full_name = $_user->users_name;
+			}
+			foreach ( $additions as $addition => $field ) {
+				if ( empty( $field ) || empty( $_user->$field ) )
+					$_user->$addition = $field;
+				else
+					$_user->$addition = $_user->$field;
 			}
 
 			$final_users[] = $_user;
@@ -379,10 +411,10 @@ class WP_Users {
 		// append_meta() does the user object, useremail, userlogins caching
 		if ( $append_meta ) {
 			if ( count( $cached_users ) ) {
-				$db_final_users =array();
+				$db_final_users = array();
 				$cached_final_users = array();
 				foreach ( $final_users as $final_user ) {
-					if ( in_array( $final_user->ID, $db_user_ids ) ) {
+					if ( in_array( $final_user->uid, $db_user_ids ) ) {
 						$db_final_users[] = $final_user;
 					} else {
 						$cached_final_users[] = $final_user;
@@ -410,17 +442,17 @@ class WP_Users {
 		if ( !$user || is_wp_error( $user ) )
 			return $user;
 
-		do_action( 'pre_' . __CLASS__ . '::' . __FUNCTION__, $user->ID );
+		do_action( 'pre_' . __CLASS__ . '::' . __FUNCTION__, $user->uid );
 
-		$r = $this->db->query( $this->db->prepare( "DELETE FROM {$this->db->users} WHERE ID = %d", $user->ID ) );
-		$this->db->query( $this->db->prepare( "DELETE FROM {$this->db->usermeta} WHERE user_id = %d", $user->ID ) );
+		$r = $this->db->query( $this->db->prepare( "DELETE FROM {$this->db->users} WHERE uid = %d", $user->uid ) );
+		$this->db->query( $this->db->prepare( "DELETE FROM {$this->db->usermeta} WHERE user_id = %d", $user->uid ) );
 
-		wp_cache_delete( $user->ID, 'users' );
+		wp_cache_delete( $user->uid, 'users' );
 		wp_cache_delete( $user->user_nicename, 'usernicename' );
-		wp_cache_delete( $user->user_email, 'useremail' );
-		wp_cache_delete( $user->user_login, 'userlogins' );
+		wp_cache_delete( $user->email, 'useremail' );
+		wp_cache_delete( $user->users_name, 'userlogins' );
 
-		do_action( __CLASS__ . '::' . __FUNCTION__, $user->ID );
+		do_action( __CLASS__ . '::' . __FUNCTION__, $user->uid );
 
 		return $r;
 	}
@@ -428,7 +460,7 @@ class WP_Users {
 	// Used for user meta, but can be used for other meta data (such as bbPress' topic meta)
 	// Should this be in the class or should it be it's own special function?
 	function append_meta( $object, $args = null ) {
-		$defaults = array( 'meta_table' => 'usermeta', 'meta_field' => 'user_id', 'id_field' => 'ID', 'cache_group' => 'users' );
+		$defaults = array( 'meta_table' => 'usermeta', 'meta_field' => 'user_id', 'id_field' => 'uid', 'cache_group' => 'users' );
 		$args = wp_parse_args( $args, $defaults );
 		extract( $args, EXTR_SKIP );
 
@@ -450,8 +482,8 @@ class WP_Users {
 			foreach ( array_keys($trans) as $i ) {
 				wp_cache_set( $i, $trans[$i], $cache_group );
 				if ( 'users' == $cache_group ) {
-					wp_cache_set( $trans[$i]->user_login, $i, 'userlogins' );
-					wp_cache_set( $trans[$i]->user_email, $i, 'useremail' );
+					wp_cache_set( $trans[$i]->users_name, $i, 'userlogins' );
+					wp_cache_set( $trans[$i]->email, $i, 'useremail' );
 					wp_cache_set( $trans[$i]->user_nicename, $i, 'usernicename' );
 				}
 			}
@@ -469,9 +501,9 @@ class WP_Users {
 			}
 			wp_cache_set( $object->$id_field, $object, $cache_group );
 			if ( 'users' == $cache_group ) {
-				wp_cache_set($object->user_login, $object->ID, 'userlogins');
-				wp_cache_set($object->user_email, $object->ID, 'useremail');
-				wp_cache_set($object->user_nicename, $object->ID, 'usernicename');
+				wp_cache_set($object->users_name, $object->uid, 'userlogins');
+				wp_cache_set($object->email, $object->uid, 'useremail');
+				wp_cache_set($object->user_nicename, $object->uid, 'usernicename');
 			}
 			return $object;
 		}
@@ -495,7 +527,7 @@ class WP_Users {
 		if ( !$user || is_wp_error($user) )
 			return $user;
 
-		$id = (int) $user->ID;
+		$id = (int) $user->uid;
 
 		if ( is_null($meta_key) || is_null($meta_value) )
 			return false;
@@ -564,8 +596,8 @@ class WP_Users {
 		return true;
 	}
 
-	function sanitize_user( $user_login, $strict = false ) {
-		return sanitize_user( $user_login, $strict );
+	function sanitize_user( $users_name, $strict = false ) {
+		return sanitize_user( $users_name, $strict );
 	}
 
 	function sanitize_nicename( $slug ) {
